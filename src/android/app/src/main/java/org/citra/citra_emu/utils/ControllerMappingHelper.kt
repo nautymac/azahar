@@ -36,8 +36,18 @@ object ControllerMappingHelper {
                 return (value + 1) / 2.0f
             }
         } else if (isXboxOneWireless(inputDevice)) {
-            // Same as the DualShock 4, the mappings are missing.
-            if (axis == MotionEvent.AXIS_Z || axis == MotionEvent.AXIS_RZ) {
+            // Android versions without a key layout for this controller expose the triggers as
+            // AXIS_Z / AXIS_RZ, centered at -1.0 with a range of [-1.0, 1.0]. Since Android 8.1
+            // the platform ships Vendor_045e_Product_02e0.kl, which maps the triggers to
+            // AXIS_LTRIGGER / AXIS_RTRIGGER and the *right stick* to AXIS_Z / AXIS_RZ, so the
+            // rescale must only run when the platform trigger axes are absent. Otherwise the
+            // C-Stick rests at (0.5, 0.5), i.e. drifts to the lower right.
+            val hasPlatformTriggerAxes =
+                inputDevice.getMotionRange(MotionEvent.AXIS_LTRIGGER) != null ||
+                    inputDevice.getMotionRange(MotionEvent.AXIS_RTRIGGER) != null
+            if (!hasPlatformTriggerAxes &&
+                (axis == MotionEvent.AXIS_Z || axis == MotionEvent.AXIS_RZ)
+            ) {
                 return (value + 1) / 2.0f
             }
             if (axis == MotionEvent.AXIS_GENERIC_1) {
